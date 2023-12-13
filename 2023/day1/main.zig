@@ -29,6 +29,20 @@ fn getFirstDigit(string: []const u8) ?u8 {
     var substring = string;
 
     while (substring.len != 0) : (substring = substring[1..]) {
+        const char = substring[0];
+
+        if (std.ascii.isDigit(char)) {
+            return char;
+        }
+    }
+
+    return null;
+}
+
+fn getFirstDigitOrNamed(string: []const u8) ?u8 {
+    var substring = string;
+
+    while (substring.len != 0) : (substring = substring[1..]) {
         inline for (digits_name_char) |digit_name_char| {
             const digit_name = digit_name_char[0];
 
@@ -51,6 +65,20 @@ fn getLastDigit(string: []const u8) ?u8 {
     var substring = string;
 
     while (substring.len != 0) : (substring = substring[0 .. substring.len - 1]) {
+        const char = substring[substring.len - 1];
+
+        if (std.ascii.isDigit(char)) {
+            return char;
+        }
+    }
+
+    return null;
+}
+
+fn getLastDigitOrNamed(string: []const u8) ?u8 {
+    var substring = string;
+
+    while (substring.len != 0) : (substring = substring[0 .. substring.len - 1]) {
         inline for (digits_name_char) |digit_name_char| {
             const digit_name = digit_name_char[0];
 
@@ -69,9 +97,8 @@ fn getLastDigit(string: []const u8) ?u8 {
     return null;
 }
 
-pub fn main() !void {
-    var input_file = try std.fs.cwd().openFile("2023/day1/input.txt", .{});
-    defer input_file.close();
+fn part1(input_file: std.fs.File) !u32 {
+    try input_file.seekTo(0);
 
     var buffer: [100]u8 = undefined;
 
@@ -81,7 +108,7 @@ pub fn main() !void {
     while (try input_file.reader().readUntilDelimiterOrEof(&buffer, '\n')) |line| {
         const first_digit = getFirstDigit(line) orelse {
             std.log.err("Invalid input, no digit line {}", .{line_num});
-            return;
+            return error.InvalidInput;
         };
 
         const last_digit = getLastDigit(line) orelse unreachable;
@@ -92,7 +119,43 @@ pub fn main() !void {
         line_num += 1;
     }
 
+    return sum;
+}
+
+fn part2(input_file: std.fs.File) !u32 {
+    try input_file.seekTo(0);
+
+    var buffer: [100]u8 = undefined;
+
+    var line_num: usize = 1;
+    var sum: u32 = 0;
+
+    while (try input_file.reader().readUntilDelimiterOrEof(&buffer, '\n')) |line| {
+        const first_digit = getFirstDigitOrNamed(line) orelse {
+            std.log.err("Invalid input, no digit line {}", .{line_num});
+            return error.InvalidInput;
+        };
+
+        const last_digit = getLastDigitOrNamed(line) orelse unreachable;
+
+        const digits = [_]u8{ first_digit, last_digit };
+
+        sum += try std.fmt.parseInt(u32, &digits, 10);
+        line_num += 1;
+    }
+
+    return sum;
+}
+
+pub fn main() !void {
+    const input_file = try std.fs.cwd().openFile("2023/day1/input.txt", .{});
+    defer input_file.close();
+
+    const part1_result = try part1(input_file);
+    const part2_result = try part2(input_file);
+
     const stdout = std.io.getStdOut().writer();
 
-    try stdout.print("Result: {}\n", .{sum});
+    try stdout.print("Part 1: {}\n", .{part1_result});
+    try stdout.print("Part 2: {}\n", .{part2_result});
 }
